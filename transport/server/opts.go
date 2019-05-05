@@ -43,6 +43,7 @@ func WithHTTPMux(mux *chi.Mux) Option {
 	return server.WithHTTPMux(mux)
 }
 
+// WithHTTPRouterMux func sets HTTPMux Router
 func WithHTTPRouterMux(mux transport.Router) Option {
 	return server.WithHTTPRouterMux(mux)
 }

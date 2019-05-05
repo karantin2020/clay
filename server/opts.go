@@ -15,11 +15,15 @@ import (
 type Option func(*serverOpts)
 
 type serverOpts struct {
+	Host    string
 	RPCPort int
 	// If HTTPPort is the same then muxing listener is created.
 	HTTPPort int
 	HTTPMux  transport.Router
-
+	// HTTPServer holds pointer to custom Server instance
+	HTTPServer *http.Server
+	// GRPCServer holds pointer to custom Server instance
+	GRPCServer      *grpc.Server
 	HTTPMiddlewares []func(http.Handler) http.Handler
 
 	GRPCOpts             []grpc.ServerOption
@@ -87,5 +91,32 @@ func WithHTTPMux(mux *chi.Mux) Option {
 func WithHTTPRouterMux(mux transport.Router) Option {
 	return func(o *serverOpts) {
 		o.HTTPMux = mux
+	}
+}
+
+// WithHTTPServer sets HTTP Server to use insted of the default
+func WithHTTPServer(srv *http.Server) Option {
+	if srv == nil {
+		panic("sent Server pointer is nil")
+	}
+	return func(o *serverOpts) {
+		o.HTTPServer = srv
+	}
+}
+
+// WithGRPCServer sets GRPC Server to use insted of the default
+func WithGRPCServer(srv *grpc.Server) Option {
+	if srv == nil {
+		panic("sent Server pointer is nil")
+	}
+	return func(o *serverOpts) {
+		o.GRPCServer = srv
+	}
+}
+
+// WithHost sets default server host
+func WithHost(host string) Option {
+	return func(o *serverOpts) {
+		o.Host = host
 	}
 }

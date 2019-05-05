@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/utrack/clay/v2/transport"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/pkg/errors"
 )
@@ -59,24 +60,24 @@ func (s *Server) Run(svc transport.Service) error {
 }
 
 func (s *Server) run() error {
-	errChan := make(chan error, 5)
-
+	var g errgroup.Group
 	if s.listeners.mainListener != nil {
-		go func() {
+		g.Go(func() error {
 			err := s.listeners.mainListener.Serve()
-			errChan <- err
-		}()
+			return err
+		})
 	}
-	go func() {
-		err := http.Serve(s.listeners.HTTP, s.srv.http)
-		errChan <- err
-	}()
-	go func() {
+	g.Go(func() error {
+		s.srv.httpSrv.Handler = s.srv.http
+		err := s.srv.httpSrv.Serve(s.listeners.HTTP)
+		return err
+	})
+	g.Go(func() error {
 		err := s.srv.grpc.Serve(s.listeners.GRPC)
-		errChan <- err
-	}()
+		return err
+	})
 
-	return <-errChan
+	return g.Wait()
 }
 
 // Stop stops the server gracefully.
